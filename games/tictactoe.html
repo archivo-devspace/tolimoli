@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tic Tac Toe Neon Glass</title>
+    <style>
+        :root {
+            --bg0: #070814;
+            --bg1: #0b1030;
+            --glass: rgba(255, 255, 255, 0.08);
+            --stroke: rgba(255, 255, 255, 0.12);
+            --text: rgba(255, 255, 255, 0.92);
+            --muted: rgba(255, 255, 255, 0.62);
+
+            --x: #7cf7ff;
+            --o: #ff6bd6;
+            --accent: #a1ffce;
+
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+            --radius: 22px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+                Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            background: radial-gradient(1200px 700px at 20% 20%,
+                    #1c2cff33,
+                    transparent 60%),
+                radial-gradient(900px 600px at 80% 10%,
+                    #ff2bd433,
+                    transparent 55%),
+                radial-gradient(900px 650px at 60% 90%,
+                    #00ffc833,
+                    transparent 55%),
+                linear-gradient(180deg, var(--bg0), var(--bg1));
+            overflow: hidden;
+        }
+
+        /* floating blobs, because humans love shiny nonsense */
+        .blob {
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 999px;
+            filter: blur(40px);
+            opacity: 0.45;
+            animation: drift 14s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        .blob.b1 {
+            left: -160px;
+            top: -120px;
+            background: radial-gradient(circle at 30% 30%, #7cf7ff, transparent 62%);
+        }
+
+        .blob.b2 {
+            right: -220px;
+            top: 60px;
+            background: radial-gradient(circle at 40% 30%, #ff6bd6, transparent 62%);
+            animation-duration: 18s;
+        }
+
+        .blob.b3 {
+            right: 80px;
+            bottom: -240px;
+            background: radial-gradient(circle at 40% 40%, #a1ffce, transparent 62%);
+            animation-duration: 20s;
+        }
+
+        @keyframes drift {
+            from {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+
+            to {
+                transform: translate3d(80px, 40px, 0) scale(1.12);
+            }
+        }
+
+        .app {
+            width: min(920px, calc(100vw - 28px));
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 18px;
+            align-items: stretch;
+            z-index: 1;
+        }
+
+        @media (max-width: 860px) {
+            .app {
+                grid-template-columns: 1fr;
+                width: min(560px, calc(100vw - 28px));
+            }
+        }
+
+        .card {
+            background: linear-gradient(180deg, var(--glass), rgba(255, 255, 255, 0.04));
+            border: 1px solid var(--stroke);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            background: radial-gradient(600px 280px at 30% 0%,
+                    rgba(124, 247, 255, 0.18),
+                    transparent 60%),
+                radial-gradient(520px 260px at 90% 10%,
+                    rgba(255, 107, 214, 0.18),
+                    transparent 60%);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .panel {
+            padding: 18px 18px 16px;
+            position: relative;
+        }
+
+        .title {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .pillRow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--stroke);
+            background: rgba(0, 0, 0, 0.18);
+            color: var(--muted);
+            font-size: 13px;
+            user-select: none;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 99px;
+            background: var(--accent);
+            box-shadow: 0 0 0 4px rgba(161, 255, 206, 0.18);
+        }
+
+        .dot.x {
+            background: var(--x);
+            box-shadow: 0 0 0 4px rgba(124, 247, 255, 0.18);
+        }
+
+        .dot.o {
+            background: var(--o);
+            box-shadow: 0 0 0 4px rgba(255, 107, 214, 0.18);
+        }
+
+        .score {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .scoreBox {
+            border: 1px solid var(--stroke);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scoreBox small {
+            display: block;
+            color: var(--muted);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .scoreBox strong {
+            font-size: 22px;
+        }
+
+        .scoreBox.x strong {
+            color: var(--x);
+        }
+
+        .scoreBox.o strong {
+            color: var(--o);
+        }
+
+        .btnRow {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            appearance: none;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 11px 14px;
+            border-radius: 14px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.09);
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        button:active {
+            transform: translateY(0px) scale(0.99);
+        }
+
+        .btnGhost {
+            background: rgba(0, 0, 0, 0.18);
+        }
+
+        .hint {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 12.5px;
+            line-height: 1.45;
+        }
+
+        /* Board */
+        .boardCard {
+            display: grid;
+            place-items: center;
+            padding: 18px;
+        }
+
+        .boardWrap {
+            width: min(420px, 100%);
+            aspect-ratio: 1 / 1;
+            position: relative;
+        }
+
+        .board {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            position: relative;
+        }
+
+        .cell {
+            border-radius: 20px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.05);
+            display: grid;
+            place-items: center;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+            overflow: hidden;
+        }
+
+        .cell:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .cell:active {
+            transform: translateY(0px) scale(0.995);
+        }
+
+        .cell[disabled] {
+            cursor: not-allowed;
+            opacity: 0.92;
+        }
+
+        .mark {
+            font-size: clamp(34px, 8vw, 62px);
+            font-weight: 900;
+            letter-spacing: 1px;
+            transform: translateY(1px);
+            text-shadow: 0 0 18px rgba(255, 255, 255, 0.16);
+        }
+
+        .mark.x {
+            color: var(--x);
+            text-shadow: 0 0 22px rgba(124, 247, 255, 0.28);
+        }
+
+        .mark.o {
+            color: var(--o);
+            text-shadow: 0 0 22px rgba(255, 107, 214, 0.28);
+        }
+
+        /* animated win line */
+        .winLine {
+            position: absolute;
+            left: 6%;
+            top: 6%;
+            width: 88%;
+            height: 88%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 180ms ease;
+        }
+
+        .winLine.on {
+            opacity: 1;
+        }
+
+        .winLine svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .toast {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 18px;
+            background: rgba(0, 0, 0, 0.26);
+            border: 1px solid var(--stroke);
+            border-radius: 16px;
+            padding: 12px 14px;
+            color: rgba(255, 255, 255, 0.86);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .toast span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .badge {
+            font-size: 12px;
+            font-weight: 800;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .badge.x {
+            color: var(--x);
+        }
+
+        .badge.o {
+            color: var(--o);
+        }
+
+        .badge.draw {
+            color: var(--accent);
+        }
+
+        /* little sparkle */
+        .cell::after {
+            content: "";
+            position: absolute;
+            inset: -60% -60%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.11), transparent 55%);
+            transform: rotate(25deg);
+            opacity: 0;
+            transition: opacity 160ms ease;
+        }
+
+        .cell:hover::after {
+            opacity: 1;
+        }
+
+        a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.35);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+
+    <main class="app">
+        <section class="card panel">
+            <div class="title">
+                <h1>Tic Tac Toe</h1>
+                <div class="subtitle">Neon glass edition. Because plain grids are boring.</div>
+            </div>
+
+            <div class="pillRow">
+                <div class="pill" id="turnPill">
+                    <div class="dot" id="turnDot"></div>
+                    <div>
+                        <div style="font-weight: 800; color: rgba(255, 255, 255, 0.9)">
+                            Turn
+                        </div>
+                        <div style="font-size: 12px" id="turnText">X</div>
+                    </div>
+                </div>
+
+                <div class="pill">
+                    <div class="dot" style="background: rgba(255, 255, 255, 0.35)"></div>
+                    <div>
+                        <div style="font-weight: 800; color: rgba(255, 255, 255, 0.9)">
+                            Mode
+                        </div>
+                        <div style="font-size: 12px" id="modeText">2 Players</div>
+                    </div>
+                </div>
+
+                <div class="pill">
+                    <div class="dot" style="background: rgba(255, 255, 255, 0.35)"></div>
+                    <div>
+                        <div style="font-weight: 800; color: rgba(255, 255, 255, 0.9)">
+                            Tip
+                        </div>
+                        <div style="font-size: 12px">Press 1 for AI, 2 for 2P</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score">
+                <div class="scoreBox x">
+                    <small>X Wins</small>
+                    <strong id="xScore">0</strong>
+                </div>
+                <div class="scoreBox">
+                    <small>Draws</small>
+                    <strong id="dScore">0</strong>
+                </div>
+                <div class="scoreBox o">
+                    <small>O Wins</small>
+                    <strong id="oScore">0</strong>
+                </div>
+            </div>
+
+            <div class="btnRow">
+                <button id="newRoundBtn">New Round</button>
+                <button id="resetBtn" class="btnGhost">Reset Scores</button>
+                <button id="toggleModeBtn" class="btnGhost">Toggle AI</button>
+            </div>
+
+            <div class="hint" id="hint">
+                Play a round. Win. Lose. Draw. Repeat. The circle of human entertainment.
+            </div>
+        </section>
+
+        <section class="card boardCard">
+            <div class="boardWrap">
+                <div class="board" id="board" aria-label="Tic Tac Toe board">
+                    <button class="cell" data-i="0" aria-label="cell 1"></button>
+                    <button class="cell" data-i="1" aria-label="cell 2"></button>
+                    <button class="cell" data-i="2" aria-label="cell 3"></button>
+                    <button class="cell" data-i="3" aria-label="cell 4"></button>
+                    <button class="cell" data-i="4" aria-label="cell 5"></button>
+                    <button class="cell" data-i="5" aria-label="cell 6"></button>
+                    <button class="cell" data-i="6" aria-label="cell 7"></button>
+                    <button class="cell" data-i="7" aria-label="cell 8"></button>
+                    <button class="cell" data-i="8" aria-label="cell 9"></button>
+                </div>
+
+                <div class="winLine" id="winLine" aria-hidden="true">
+                    <svg viewBox="0 0 100 100" fill="none">
+                        <path id="winPath" d="" stroke="white" stroke-opacity="0.9" stroke-width="6"
+                            stroke-linecap="round" stroke-dasharray="120" stroke-dashoffset="120" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="toast" id="toast" style="display: none">
+                <div>
+                    <div style="font-weight: 900" id="toastTitle">Round over</div>
+                    <span id="toastBody">Someone did a thing.</span>
+                </div>
+                <div class="badge" id="toastBadge">OK</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (() => {
+            const $ = (q) => document.querySelector(q);
+            const $$ = (q) => Array.from(document.querySelectorAll(q));
+
+            const boardEl = $("#board");
+            const cells = $$(".cell");
+            const winLine = $("#winLine");
+            const winPath = $("#winPath");
+
+            const xScoreEl = $("#xScore");
+            const oScoreEl = $("#oScore");
+            const dScoreEl = $("#dScore");
+
+            const turnText = $("#turnText");
+            const turnDot = $("#turnDot");
+            const modeText = $("#modeText");
+            const hint = $("#hint");
+
+            const toast = $("#toast");
+            const toastTitle = $("#toastTitle");
+            const toastBody = $("#toastBody");
+            const toastBadge = $("#toastBadge");
+
+            const newRoundBtn = $("#newRoundBtn");
+            const resetBtn = $("#resetBtn");
+            const toggleModeBtn = $("#toggleModeBtn");
+
+            const LINES = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            // map win line to SVG path coords in 3x3 grid
+            const lineToPath = (lineIndex) => {
+                // positions in 0..100
+                const map = {
+                    0: "M 10 16 L 90 16",
+                    1: "M 10 50 L 90 50",
+                    2: "M 10 84 L 90 84",
+                    3: "M 16 10 L 16 90",
+                    4: "M 50 10 L 50 90",
+                    5: "M 84 10 L 84 90",
+                    6: "M 14 14 L 86 86",
+                    7: "M 86 14 L 14 86",
+                };
+                return map[lineIndex] || "";
+            };
+
+            let board = Array(9).fill(null);
+            let turn = "X";
+            let gameOver = false;
+
+            let vsAI = false; // AI plays O
+            let scores = { X: 0, O: 0, D: 0 };
+
+            function setTurnUI() {
+                turnText.textContent = turn;
+                turnDot.className = "dot " + (turn === "X" ? "x" : "o");
+                hint.textContent = gameOver
+                    ? "New round resets the board. Reset scores wipes your glory."
+                    : vsAI
+                        ? turn === "X"
+                            ? "Your move. Try not to feed the machine."
+                            : "AI is thinking. It won’t take long. It’s a computer."
+                        : "Local multiplayer. Friendship may not survive this.";
+            }
+
+            function render() {
+                cells.forEach((c, i) => {
+                    c.innerHTML = board[i]
+                        ? `<span class="mark ${board[i].toLowerCase()}">${board[i]}</span>`
+                        : "";
+                    c.disabled = gameOver || !!board[i] || (vsAI && turn === "O");
+                });
+
+                xScoreEl.textContent = scores.X;
+                oScoreEl.textContent = scores.O;
+                dScoreEl.textContent = scores.D;
+
+                modeText.textContent = vsAI ? "Vs AI" : "2 Players";
+                setTurnUI();
+            }
+
+            function checkWinner(b = board) {
+                for (let i = 0; i < LINES.length; i++) {
+                    const [a, c, d] = LINES[i];
+                    if (b[a] && b[a] === b[c] && b[a] === b[d]) {
+                        return { winner: b[a], lineIndex: i, line: [a, c, d] };
+                    }
+                }
+                if (b.every(Boolean)) return { winner: "D" };
+                return null;
+            }
+
+            function showWinLine(lineIndex, who) {
+                winPath.setAttribute("d", lineToPath(lineIndex));
+                // tint by winner
+                winPath.setAttribute(
+                    "stroke",
+                    who === "X" ? getComputedStyle(document.documentElement).getPropertyValue("--x") : getComputedStyle(document.documentElement).getPropertyValue("--o")
+                );
+
+                winLine.classList.add("on");
+                // animate dash
+                winPath.style.transition = "none";
+                winPath.style.strokeDashoffset = "120";
+                // force reflow
+                winPath.getBoundingClientRect();
+                winPath.style.transition = "stroke-dashoffset 420ms ease";
+                winPath.style.strokeDashoffset = "0";
+            }
+
+            function hideWinLine() {
+                winLine.classList.remove("on");
+                winPath.setAttribute("d", "");
+            }
+
+            function showToast(title, body, badgeText, badgeClass) {
+                toastTitle.textContent = title;
+                toastBody.textContent = body;
+                toastBadge.textContent = badgeText;
+                toastBadge.className = "badge " + badgeClass;
+                toast.style.display = "flex";
+            }
+
+            function hideToast() {
+                toast.style.display = "none";
+            }
+
+            function endRound(result) {
+                gameOver = true;
+
+                if (result.winner === "D") {
+                    scores.D += 1;
+                    showToast("Draw", "No winner. Perfectly on-brand.", "DRAW", "draw");
+                } else {
+                    scores[result.winner] += 1;
+                    showToast(
+                        "Winner",
+                        `${result.winner} wins. Someone’s ego just inflated.`,
+                        result.winner,
+                        result.winner === "X" ? "x" : "o"
+                    );
+                    showWinLine(result.lineIndex, result.winner);
+                }
+
+                render();
+            }
+
+            function place(i, who) {
+                if (gameOver || board[i]) return false;
+                board[i] = who;
+                const res = checkWinner(board);
+                if (res) {
+                    endRound(res);
+                } else {
+                    turn = who === "X" ? "O" : "X";
+                    render();
+                    if (vsAI && turn === "O") {
+                        aiMove();
+                    }
+                }
+                return true;
+            }
+
+            // AI: minimax with depth scoring (fast enough for 3x3)
+            function minimax(b, current, depth) {
+                const res = checkWinner(b);
+                if (res) {
+                    if (res.winner === "O") return 10 - depth;
+                    if (res.winner === "X") return depth - 10;
+                    return 0;
+                }
+
+                const moves = [];
+                for (let i = 0; i < 9; i++) {
+                    if (!b[i]) {
+                        b[i] = current;
+                        const score = minimax(b, current === "X" ? "O" : "X", depth + 1);
+                        moves.push({ i, score });
+                        b[i] = null;
+                    }
+                }
+
+                if (current === "O") {
+                    // maximize
+                    return moves.reduce((best, m) => Math.max(best, m.score), -Infinity);
+                } else {
+                    // minimize
+                    return moves.reduce((best, m) => Math.min(best, m.score), Infinity);
+                }
+            }
+
+            function bestMoveForO() {
+                let best = { i: -1, score: -Infinity };
+                for (let i = 0; i < 9; i++) {
+                    if (!board[i]) {
+                        board[i] = "O";
+                        const score = minimax(board, "X", 0);
+                        board[i] = null;
+                        if (score > best.score) best = { i, score };
+                    }
+                }
+                return best.i;
+            }
+
+            function aiMove() {
+                // tiny delay so humans can pretend it’s “thinking”
+                setTurnUI();
+                setTimeout(() => {
+                    if (gameOver) return;
+                    const i = bestMoveForO();
+                    if (i >= 0) place(i, "O");
+                }, 260);
+            }
+
+            function newRound() {
+                board = Array(9).fill(null);
+                turn = "X";
+                gameOver = false;
+                hideWinLine();
+                hideToast();
+                render();
+                if (vsAI && turn === "O") aiMove();
+            }
+
+            function resetScores() {
+                scores = { X: 0, O: 0, D: 0 };
+                newRound();
+            }
+
+            function toggleMode() {
+                vsAI = !vsAI;
+                hint.textContent = vsAI
+                    ? "AI enabled. You are X. The AI is O. Good luck."
+                    : "AI disabled. 2-player mode. Blame your friend when you lose.";
+                newRound();
+            }
+
+            boardEl.addEventListener("click", (e) => {
+                const btn = e.target.closest(".cell");
+                if (!btn) return;
+                const i = Number(btn.dataset.i);
+                place(i, turn);
+            });
+
+            newRoundBtn.addEventListener("click", newRound);
+            resetBtn.addEventListener("click", resetScores);
+            toggleModeBtn.addEventListener("click", toggleMode);
+
+            // keyboard shortcuts
+            window.addEventListener("keydown", (e) => {
+                if (e.key === "r" || e.key === "R") newRound();
+                if (e.key === "1") {
+                    if (!vsAI) toggleMode();
+                }
+                if (e.key === "2") {
+                    if (vsAI) toggleMode();
+                }
+            });
+
+            render();
+        })();
+    </script>
+</body>
+
+</html>

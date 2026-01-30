@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Four in a Row Neon Glass</title>
+    <style>
+        :root {
+            --bg0: #070814;
+            --bg1: #0b1030;
+            --glass: rgba(255, 255, 255, 0.08);
+            --stroke: rgba(255, 255, 255, 0.12);
+            --text: rgba(255, 255, 255, 0.92);
+            --muted: rgba(255, 255, 255, 0.62);
+
+            --p1: #7cf7ff;
+            /* Cyan */
+            --p2: #ff6bd6;
+            /* Pink */
+            --accent: #a1ffce;
+
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+            --radius: 22px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+                Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            background: radial-gradient(1200px 700px at 20% 20%,
+                    #1c2cff33,
+                    transparent 60%),
+                radial-gradient(900px 600px at 80% 10%,
+                    #ff2bd433,
+                    transparent 55%),
+                radial-gradient(900px 650px at 60% 90%,
+                    #00ffc833,
+                    transparent 55%),
+                linear-gradient(180deg, var(--bg0), var(--bg1));
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 999px;
+            filter: blur(40px);
+            opacity: 0.45;
+            animation: drift 14s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        .blob.b1 {
+            left: -160px;
+            top: -120px;
+            background: radial-gradient(circle at 30% 30%, #7cf7ff, transparent 62%);
+        }
+
+        .blob.b2 {
+            right: -220px;
+            top: 60px;
+            background: radial-gradient(circle at 40% 30%, #ff6bd6, transparent 62%);
+            animation-duration: 18s;
+        }
+
+        .blob.b3 {
+            right: 80px;
+            bottom: -240px;
+            background: radial-gradient(circle at 40% 40%, #a1ffce, transparent 62%);
+            animation-duration: 20s;
+        }
+
+        @keyframes drift {
+            from {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+
+            to {
+                transform: translate3d(80px, 40px, 0) scale(1.12);
+            }
+        }
+
+        .app {
+            width: min(980px, calc(100vw - 28px));
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 18px;
+            align-items: stretch;
+            z-index: 1;
+        }
+
+        @media (max-width: 920px) {
+            .app {
+                grid-template-columns: 1fr;
+                width: min(680px, calc(100vw - 28px));
+            }
+        }
+
+        .card {
+            background: linear-gradient(180deg,
+                    var(--glass),
+                    rgba(255, 255, 255, 0.04));
+            border: 1px solid var(--stroke);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            background: radial-gradient(600px 280px at 30% 0%,
+                    rgba(124, 247, 255, 0.18),
+                    transparent 60%),
+                radial-gradient(520px 260px at 90% 10%,
+                    rgba(255, 107, 214, 0.18),
+                    transparent 60%);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .panel {
+            padding: 18px 18px 16px;
+            position: relative;
+        }
+
+        .title {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .pillRow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--stroke);
+            background: rgba(0, 0, 0, 0.18);
+            color: var(--muted);
+            font-size: 13px;
+            user-select: none;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 99px;
+            background: var(--accent);
+            box-shadow: 0 0 0 4px rgba(161, 255, 206, 0.18);
+        }
+
+        .dot.p1 {
+            background: var(--p1);
+            box-shadow: 0 0 0 4px rgba(124, 247, 255, 0.18);
+        }
+
+        .dot.p2 {
+            background: var(--p2);
+            box-shadow: 0 0 0 4px rgba(255, 107, 214, 0.18);
+        }
+
+        .score {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .scoreBox {
+            border: 1px solid var(--stroke);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+        }
+
+        .scoreBox small {
+            display: block;
+            color: var(--muted);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .scoreBox strong {
+            font-size: 22px;
+        }
+
+        .scoreBox.p1 strong {
+            color: var(--p1);
+        }
+
+        .scoreBox.p2 strong {
+            color: var(--p2);
+        }
+
+        .btnRow {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            appearance: none;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 11px 14px;
+            border-radius: 14px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            transition: transform 140ms ease, background 140ms ease,
+                border-color 140ms ease;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.09);
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        button:active {
+            transform: translateY(0px) scale(0.99);
+        }
+
+        .btnGhost {
+            background: rgba(0, 0, 0, 0.18);
+        }
+
+        .hint {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 12.5px;
+            line-height: 1.45;
+        }
+
+        /* Board */
+        .boardCard {
+            padding: 18px;
+            display: grid;
+            place-items: center;
+        }
+
+        .boardWrap {
+            width: min(520px, 100%);
+            position: relative;
+            user-select: none;
+        }
+
+        .topHover {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+            opacity: 0.95;
+        }
+
+        .hoverSlot {
+            height: 44px;
+            border-radius: 16px;
+            border: 1px dashed rgba(255, 255, 255, 0.18);
+            background: rgba(0, 0, 0, 0.16);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: transform 120ms ease, background 120ms ease,
+                border-color 120ms ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hoverSlot:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .ghostDisc {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            opacity: 0;
+            transform: translateY(-6px) scale(0.95);
+            transition: opacity 140ms ease, transform 140ms ease;
+            box-shadow: 0 0 18px rgba(255, 255, 255, 0.12);
+        }
+
+        .hoverSlot:hover .ghostDisc {
+            opacity: 0.9;
+            transform: translateY(0px) scale(1);
+        }
+
+        .ghostDisc.p1 {
+            background: radial-gradient(circle at 30% 30%, #ffffffaa, transparent 40%),
+                var(--p1);
+            box-shadow: 0 0 22px rgba(124, 247, 255, 0.22);
+        }
+
+        .ghostDisc.p2 {
+            background: radial-gradient(circle at 30% 30%, #ffffffaa, transparent 40%),
+                var(--p2);
+            box-shadow: 0 0 22px rgba(255, 107, 214, 0.22);
+        }
+
+        .grid {
+            aspect-ratio: 7 / 6;
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            padding: 12px;
+            border-radius: 22px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cell {
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(0, 0, 0, 0.18);
+            display: grid;
+            place-items: center;
+            position: relative;
+        }
+
+        .disc {
+            width: 74%;
+            aspect-ratio: 1 / 1;
+            border-radius: 999px;
+            transform: translateY(-18px);
+            opacity: 0;
+            animation: drop 240ms ease forwards;
+            box-shadow: 0 18px 34px rgba(0, 0, 0, 0.35);
+        }
+
+        @keyframes drop {
+            to {
+                transform: translateY(0px);
+                opacity: 1;
+            }
+        }
+
+        .disc.p1 {
+            background: radial-gradient(circle at 30% 30%, #ffffffbb, transparent 45%),
+                var(--p1);
+            box-shadow: 0 0 24px rgba(124, 247, 255, 0.22),
+                0 18px 34px rgba(0, 0, 0, 0.35);
+        }
+
+        .disc.p2 {
+            background: radial-gradient(circle at 30% 30%, #ffffffbb, transparent 45%),
+                var(--p2);
+            box-shadow: 0 0 24px rgba(255, 107, 214, 0.22),
+                0 18px 34px rgba(0, 0, 0, 0.35);
+        }
+
+        .cell.win {
+            border-color: rgba(255, 255, 255, 0.32);
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+        }
+
+        .toast {
+            margin-top: 14px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.26);
+            border: 1px solid var(--stroke);
+            border-radius: 16px;
+            padding: 12px 14px;
+            color: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .toast span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .badge {
+            font-size: 12px;
+            font-weight: 800;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .badge.p1 {
+            color: var(--p1);
+        }
+
+        .badge.p2 {
+            color: var(--p2);
+        }
+
+        .badge.draw {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+
+    <main class="app">
+        <section class="card panel">
+            <div class="title">
+                <h1>Four in a Row</h1>
+                <div class="subtitle">Drop discs. Ruin friendships. You know the drill.</div>
+            </div>
+
+            <div class="pillRow">
+                <div class="pill">
+                    <div class="dot" id="turnDot"></div>
+                    <div>
+                        <div style="font-weight: 800; color: rgba(255, 255, 255, 0.9)">
+                            Turn
+                        </div>
+                        <div style="font-size: 12px" id="turnText">P1</div>
+                    </div>
+                </div>
+
+                <div class="pill">
+                    <div class="dot" style="background: rgba(255, 255, 255, 0.35)"></div>
+                    <div>
+                        <div style="font-weight: 800; color: rgba(255, 255, 255, 0.9)">
+                            Mode
+                        </div>
+                        <div style="font-size: 12px" id="modeText">2 Players</div>
+                    </div>
+                </div>
+
+                <div class="pill">
+                    <div class="dot" style="background: rgba(255, 255, 255, 0.35)"></div>
+                    <div>
+                        <div style="font-weight: 800; color: rgba(255, 255, 255, 0.9)">
+                            Tip
+                        </div>
+                        <div style="font-size: 12px">Press 1 for AI, 2 for 2P, R reset</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score">
+                <div class="scoreBox p1">
+                    <small>P1 Wins</small>
+                    <strong id="p1Score">0</strong>
+                </div>
+                <div class="scoreBox">
+                    <small>Draws</small>
+                    <strong id="dScore">0</strong>
+                </div>
+                <div class="scoreBox p2">
+                    <small>P2 Wins</small>
+                    <strong id="p2Score">0</strong>
+                </div>
+            </div>
+
+            <div class="btnRow">
+                <button id="newRoundBtn">New Round</button>
+                <button id="resetBtn" class="btnGhost">Reset Scores</button>
+                <button id="toggleModeBtn" class="btnGhost">Toggle AI</button>
+            </div>
+
+            <div class="hint" id="hint">
+                Click a column to drop. If you “misclick”, that’s between you and your
+                conscience.
+            </div>
+        </section>
+
+        <section class="card boardCard">
+            <div class="boardWrap">
+                <div class="topHover" id="topHover"></div>
+                <div class="grid" id="grid" aria-label="Connect Four board"></div>
+                <div class="toast" id="toast">
+                    <div>
+                        <div style="font-weight: 900" id="toastTitle">Round over</div>
+                        <span id="toastBody">Someone did a thing.</span>
+                    </div>
+                    <div class="badge" id="toastBadge">OK</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (() => {
+            const $ = (q) => document.querySelector(q);
+
+            const COLS = 7;
+            const ROWS = 6;
+            const WIN = 4;
+
+            const topHover = $("#topHover");
+            const gridEl = $("#grid");
+
+            const turnDot = $("#turnDot");
+            const turnText = $("#turnText");
+            const modeText = $("#modeText");
+            const hint = $("#hint");
+
+            const p1ScoreEl = $("#p1Score");
+            const p2ScoreEl = $("#p2Score");
+            const dScoreEl = $("#dScore");
+
+            const toast = $("#toast");
+            const toastTitle = $("#toastTitle");
+            const toastBody = $("#toastBody");
+            const toastBadge = $("#toastBadge");
+
+            const newRoundBtn = $("#newRoundBtn");
+            const resetBtn = $("#resetBtn");
+            const toggleModeBtn = $("#toggleModeBtn");
+
+            let board; // board[row][col] = 0 | 1 | 2
+            let current = 1; // 1 = P1, 2 = P2 (AI uses 2)
+            let gameOver = false;
+            let vsAI = false;
+
+            let scores = { p1: 0, p2: 0, d: 0 };
+
+            function makeEmptyBoard() {
+                return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            }
+
+            function inBounds(r, c) {
+                return r >= 0 && r < ROWS && c >= 0 && c < COLS;
+            }
+
+            function setTurnUI() {
+                turnText.textContent = current === 1 ? "P1" : "P2";
+                turnDot.className = "dot " + (current === 1 ? "p1" : "p2");
+                modeText.textContent = vsAI ? "Vs AI" : "2 Players";
+                hint.textContent = gameOver
+                    ? "New round clears the board. Reset scores deletes your legacy."
+                    : vsAI
+                        ? current === 1
+                            ? "Your move. Try not to hand the AI a free win."
+                            : "AI is thinking. It’s literally a loop."
+                        : "2-player mode. Betrayal is optional, but common.";
+            }
+
+            function renderBoard() {
+                // top hover row
+                topHover.innerHTML = "";
+                for (let c = 0; c < COLS; c++) {
+                    const slot = document.createElement("div");
+                    slot.className = "hoverSlot";
+                    slot.dataset.col = String(c);
+
+                    const ghost = document.createElement("div");
+                    ghost.className = "ghostDisc " + (current === 1 ? "p1" : "p2");
+
+                    slot.appendChild(ghost);
+                    topHover.appendChild(slot);
+                }
+
+                // grid cells
+                gridEl.innerHTML = "";
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const cell = document.createElement("div");
+                        cell.className = "cell";
+                        cell.dataset.r = String(r);
+                        cell.dataset.c = String(c);
+
+                        const v = board[r][c];
+                        if (v !== 0) {
+                            const disc = document.createElement("div");
+                            disc.className = "disc " + (v === 1 ? "p1" : "p2");
+                            cell.appendChild(disc);
+                        }
+
+                        gridEl.appendChild(cell);
+                    }
+                }
+
+                p1ScoreEl.textContent = scores.p1;
+                p2ScoreEl.textContent = scores.p2;
+                dScoreEl.textContent = scores.d;
+
+                setTurnUI();
+            }
+
+            function showToast(title, body, badgeText, badgeClass) {
+                toastTitle.textContent = title;
+                toastBody.textContent = body;
+                toastBadge.textContent = badgeText;
+                toastBadge.className = "badge " + badgeClass;
+                toast.style.display = "flex";
+            }
+
+            function hideToast() {
+                toast.style.display = "none";
+            }
+
+            function getDropRow(col) {
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (board[r][col] === 0) return r;
+                }
+                return -1;
+            }
+
+            function checkWinnerAt(r0, c0, player) {
+                // directions: right, down, diag down-right, diag down-left
+                const dirs = [
+                    [0, 1],
+                    [1, 0],
+                    [1, 1],
+                    [1, -1],
+                ];
+
+                for (const [dr, dc] of dirs) {
+                    let count = 1;
+                    const cells = [[r0, c0]];
+
+                    // forward
+                    let r = r0 + dr,
+                        c = c0 + dc;
+                    while (inBounds(r, c) && board[r][c] === player) {
+                        cells.push([r, c]);
+                        count++;
+                        r += dr;
+                        c += dc;
+                    }
+
+                    // backward
+                    r = r0 - dr;
+                    c = c0 - dc;
+                    while (inBounds(r, c) && board[r][c] === player) {
+                        cells.unshift([r, c]);
+                        count++;
+                        r -= dr;
+                        c -= dc;
+                    }
+
+                    if (count >= WIN) {
+                        // if longer than 4, still highlight all connected ones, why not
+                        return cells;
+                    }
+                }
+                return null;
+            }
+
+            function findAnyWin(player) {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (board[r][c] !== player) continue;
+                        const cells = checkWinnerAt(r, c, player);
+                        if (cells) return cells;
+                    }
+                }
+                return null;
+            }
+
+            function boardFull() {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[0][c] === 0) return false;
+                }
+                return true;
+            }
+
+            function highlightWin(cells) {
+                const all = Array.from(gridEl.children);
+                const idx = (r, c) => r * COLS + c;
+                cells.forEach(([r, c]) => {
+                    all[idx(r, c)]?.classList.add("win");
+                });
+            }
+
+            function clearHighlights() {
+                Array.from(gridEl.children).forEach((el) => el.classList.remove("win"));
+            }
+
+            function endRound(winnerPlayer, winCells) {
+                gameOver = true;
+                if (winnerPlayer === 0) {
+                    scores.d++;
+                    showToast("Draw", "Nobody wins. Classic.", "DRAW", "draw");
+                } else if (winnerPlayer === 1) {
+                    scores.p1++;
+                    showToast("Winner", "P1 wins. Please act surprised.", "P1", "p1");
+                    if (winCells) highlightWin(winCells);
+                } else {
+                    scores.p2++;
+                    showToast(
+                        "Winner",
+                        vsAI ? "AI wins. Shocking." : "P2 wins. Enjoy the bragging rights.",
+                        "P2",
+                        "p2"
+                    );
+                    if (winCells) highlightWin(winCells);
+                }
+                renderBoard();
+            }
+
+            function switchTurn() {
+                current = current === 1 ? 2 : 1;
+                renderBoard();
+
+                if (vsAI && current === 2 && !gameOver) {
+                    aiMove();
+                }
+            }
+
+            function drop(col) {
+                if (gameOver) return;
+                if (vsAI && current === 2) return; // wait for AI
+                const row = getDropRow(col);
+                if (row < 0) return; // column full
+
+                board[row][col] = current;
+                clearHighlights();
+
+                const winCells = checkWinnerAt(row, col, current);
+                if (winCells) {
+                    endRound(current, winCells);
+                    return;
+                }
+
+                if (boardFull()) {
+                    endRound(0, null);
+                    return;
+                }
+
+                switchTurn();
+            }
+
+            // Lightweight AI:
+            // 1) win if possible
+            // 2) block opponent win
+            // 3) otherwise prefer center-ish columns with a simple heuristic
+            function aiBestColumn() {
+                const ai = 2;
+                const human = 1;
+
+                function tryCol(col, player) {
+                    const r = getDropRow(col);
+                    if (r < 0) return null;
+                    board[r][col] = player;
+                    const win = checkWinnerAt(r, col, player);
+                    board[r][col] = 0;
+                    return win;
+                }
+
+                // win now
+                for (let c = 0; c < COLS; c++) {
+                    const win = tryCol(c, ai);
+                    if (win) return c;
+                }
+
+                // block human
+                for (let c = 0; c < COLS; c++) {
+                    const win = tryCol(c, human);
+                    if (win) return c;
+                }
+
+                // heuristic: center preference + potential connections
+                const order = [3, 2, 4, 1, 5, 0, 6];
+
+                const scoreCol = (col) => {
+                    const r = getDropRow(col);
+                    if (r < 0) return -Infinity;
+                    // pretend AI drops here and score how "connected" it becomes
+                    board[r][col] = ai;
+
+                    let score = 0;
+
+                    // center bonus
+                    score += 6 - Math.abs(3 - col) * 2;
+
+                    // count adjacent AI discs in 4 directions
+                    const dirs = [
+                        [0, 1],
+                        [1, 0],
+                        [1, 1],
+                        [1, -1],
+                    ];
+
+                    for (const [dr, dc] of dirs) {
+                        let count = 1;
+
+                        // forward
+                        let rr = r + dr,
+                            cc = col + dc;
+                        while (inBounds(rr, cc) && board[rr][cc] === ai) {
+                            count++;
+                            rr += dr;
+                            cc += dc;
+                        }
+
+                        // backward
+                        rr = r - dr;
+                        cc = col - dc;
+                        while (inBounds(rr, cc) && board[rr][cc] === ai) {
+                            count++;
+                            rr -= dr;
+                            cc -= dc;
+                        }
+
+                        score += count * count; // quadratic reward
+                    }
+
+                    board[r][col] = 0;
+                    return score;
+                };
+
+                let best = order[0];
+                let bestScore = -Infinity;
+                for (const c of order) {
+                    const s = scoreCol(c);
+                    if (s > bestScore) {
+                        bestScore = s;
+                        best = c;
+                    }
+                }
+                return best;
+            }
+
+            function aiMove() {
+                setTurnUI();
+                setTimeout(() => {
+                    if (gameOver) return;
+                    const col = aiBestColumn();
+                    const row = getDropRow(col);
+                    if (row < 0) return; // should not happen often
+
+                    board[row][col] = 2;
+                    clearHighlights();
+
+                    const winCells = checkWinnerAt(row, col, 2);
+                    if (winCells) {
+                        endRound(2, winCells);
+                        return;
+                    }
+
+                    if (boardFull()) {
+                        endRound(0, null);
+                        return;
+                    }
+
+                    current = 1;
+                    renderBoard();
+                }, 260);
+            }
+
+            function newRound() {
+                board = makeEmptyBoard();
+                current = 1;
+                gameOver = false;
+                clearHighlights();
+                hideToast();
+                renderBoard();
+            }
+
+            function resetScores() {
+                scores = { p1: 0, p2: 0, d: 0 };
+                newRound();
+            }
+
+            function toggleMode() {
+                vsAI = !vsAI;
+                hint.textContent = vsAI
+                    ? "AI enabled. You are P1 (cyan). AI is P2 (pink)."
+                    : "AI disabled. Two humans. Good luck with that.";
+                newRound();
+            }
+
+            // Events
+            topHover.addEventListener("click", (e) => {
+                const slot = e.target.closest(".hoverSlot");
+                if (!slot) return;
+                drop(Number(slot.dataset.col));
+            });
+
+            // keyboard shortcuts
+            window.addEventListener("keydown", (e) => {
+                if (e.key === "r" || e.key === "R") newRound();
+                if (e.key === "1") {
+                    if (!vsAI) toggleMode();
+                }
+                if (e.key === "2") {
+                    if (vsAI) toggleMode();
+                }
+                // 1..7 to drop columns in 2P mode too
+                if (/^[1-7]$/.test(e.key)) {
+                    drop(Number(e.key) - 1);
+                }
+            });
+
+            newRoundBtn.addEventListener("click", newRound);
+            resetBtn.addEventListener("click", resetScores);
+            toggleModeBtn.addEventListener("click", toggleMode);
+
+            // init
+            newRound();
+        })();
+    </script>
+</body>
+
+</html>

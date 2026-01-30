@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Forest Runner (Christmas Obstacles)</title>
+    <style>
+        :root {
+            --bg1: #06321a;
+            --bg2: #0b4d28;
+            --panel: rgba(0, 0, 0, .28);
+            --line: rgba(255, 255, 255, .14);
+            --text: rgba(255, 255, 255, .92);
+            --muted: rgba(255, 255, 255, .66);
+            --accent: #34d399;
+            --danger: #fb7185;
+            --gold: #fbbf24;
+            --shadow: 0 18px 50px rgba(0, 0, 0, .45);
+            --radius: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(900px 500px at 70% 25%, rgba(52, 211, 153, .18), transparent 60%),
+                radial-gradient(900px 600px at 20% 80%, rgba(34, 197, 94, .14), transparent 55%),
+                linear-gradient(180deg, #02170c, #031f11 40%, #02140b);
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            color: var(--text);
+            padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .wrap {
+            width: min(980px, 100%);
+            display: grid;
+            gap: 12px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: clamp(18px, 2.4vw, 26px);
+            letter-spacing: .2px;
+            font-weight: 900;
+        }
+
+        .title p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .hud {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 999px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .25);
+            backdrop-filter: blur(6px);
+            user-select: none;
+        }
+
+        .statLabel {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .statValue {
+            font-weight: 900;
+            letter-spacing: .3px;
+        }
+
+        .board {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, .12);
+            box-shadow: var(--shadow);
+            background: linear-gradient(180deg, rgba(11, 77, 40, .35), rgba(0, 0, 0, .25));
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16/9;
+            display: block;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            pointer-events: none;
+            padding: 18px;
+        }
+
+        .card {
+            pointer-events: none;
+            width: min(640px, 96%);
+            padding: 16px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, .32);
+            border: 1px solid rgba(255, 255, 255, .16);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+            text-align: center;
+            transform: translateY(-4px);
+            opacity: 0;
+            transition: opacity .18s ease, transform .18s ease;
+        }
+
+        .card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card h2 {
+            margin: 0 0 6px;
+            font-size: clamp(18px, 2.2vw, 28px);
+            font-weight: 900;
+        }
+
+        .card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .hintRow {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            color: rgba(255, 255, 255, .78);
+            font-size: 12px;
+        }
+
+        kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 11px;
+            padding: 3px 7px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            background: rgba(255, 255, 255, .08);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .25);
+        }
+
+        /* Minimal mobile control buttons (optional) */
+        .touchBtns {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .btn {
+            border: 1px solid rgba(255, 255, 255, .16);
+            background: rgba(0, 0, 0, .25);
+            color: rgba(255, 255, 255, .92);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 800;
+            user-select: none;
+            touch-action: manipulation;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, .35);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        @media (max-width: 520px) {
+            .title p {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <div class="title">
+                <h1>Forest Runner: Christmas Dash</h1>
+                <p>Swipe (phone) or use keys. Dodge festive obstacles. Collect coins. Try not to become a holiday
+                    decoration.</p>
+            </div>
+            <div class="hud">
+                <div class="pill"><span class="statLabel">Score</span> <span class="statValue" id="score">0</span></div>
+                <div class="pill"><span class="statLabel">Coins</span> <span class="statValue" id="coins">0</span></div>
+                <div class="pill"><span class="statLabel">Speed</span> <span class="statValue" id="speed">1.0x</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="board">
+            <canvas id="c" width="960" height="540"></canvas>
+
+            <div class="touchBtns">
+                <button class="btn" id="startBtn">Start</button>
+                <button class="btn" id="restartBtn">Restart</button>
+            </div>
+
+            <div class="overlay">
+                <div class="card show" id="card">
+                    <h2 id="cardTitle">Ready?</h2>
+                    <p id="cardText">Swipe: left/right to change lane, up to jump, down to slide. Keyboard works too.
+                    </p>
+                    <div class="hintRow">
+                        <span><kbd>←</kbd><kbd>→</kbd> lane</span>
+                        <span><kbd>↑</kbd> jump</span>
+                        <span><kbd>↓</kbd> slide</span>
+                        <span><kbd>R</kbd> restart</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("c");
+        const ctx = canvas.getContext("2d");
+
+        const scoreEl = document.getElementById("score");
+        const coinsEl = document.getElementById("coins");
+        const speedEl = document.getElementById("speed");
+        const card = document.getElementById("card");
+        const cardTitle = document.getElementById("cardTitle");
+        const cardText = document.getElementById("cardText");
+        const startBtn = document.getElementById("startBtn");
+        const restartBtn = document.getElementById("restartBtn");
+
+        const W = canvas.width, H = canvas.height;
+
+        // Lanes: 3
+        const lanes = [-180, 0, 180].map(x => x + W / 2);
+        const laneWidth = 170;
+
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const lerp = (a, b, t) => a + (b - a) * t;
+
+        // Game state
+        const state = {
+            started: false,
+            over: false,
+            score: 0,
+            coins: 0,
+            t: 0,
+            speed: 520,         // forward speed (world units/s)
+            speedMult: 1.0,
+            spawnTimer: 0,
+            coinTimer: 0,
+            shake: 0
+        };
+
+        // Runner
+        const runner = {
+            lane: 1,            // 0,1,2
+            x: lanes[1],
+            y: H * 0.76,
+            baseY: H * 0.76,
+            w: 56,
+            h: 78,
+            vy: 0,
+            jumpVel: -720,
+            g: 1900,
+            onGround: true,
+            slide: 0,           // seconds remaining
+            invuln: 0
+        };
+
+        // Obstacles & coins
+        const obstacles = [];
+        const coins = [];
+
+        // Christmas obstacle types
+        const OB_TYPES = [
+            { kind: "gift", w: 78, h: 78, hitH: 78 },                // box
+            { kind: "snowman", w: 72, h: 92, hitH: 92 },                // tall
+            { kind: "caneGate", w: 120, h: 78, hitH: 78, low: true }      // must slide sometimes
+        ];
+
+        // Input
+        const keys = new Set();
+
+        window.addEventListener("keydown", (e) => {
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
+            keys.add(e.key.toLowerCase());
+
+            if (e.key.toLowerCase() === "r") restart();
+            if (e.key === " " && !state.started && !state.over) start();
+            if (!state.started || state.over) return;
+
+            if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") changeLane(-1);
+            if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") changeLane(1);
+            if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") jump();
+            if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") slide();
+        }, { passive: false });
+
+        window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+
+        // Mobile swipe
+        let touchStart = null;
+        canvas.addEventListener("pointerdown", (e) => {
+            canvas.setPointerCapture(e.pointerId);
+            touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+        });
+        canvas.addEventListener("pointerup", (e) => {
+            if (!touchStart) return;
+            const dx = e.clientX - touchStart.x;
+            const dy = e.clientY - touchStart.y;
+            const adx = Math.abs(dx), ady = Math.abs(dy);
+
+            // tap to start if not started
+            if (!state.started && !state.over) {
+                start();
+                touchStart = null;
+                return;
+            }
+
+            const minDist = 28;
+            if (adx < minDist && ady < minDist) {
+                // small tap: jump (fun on phone)
+                if (state.started && !state.over) jump();
+                touchStart = null;
+                return;
+            }
+
+            if (adx > ady) {
+                if (dx > 0) changeLane(1);
+                else changeLane(-1);
+            } else {
+                if (dy < 0) jump();
+                else slide();
+            }
+            touchStart = null;
+        });
+
+        startBtn.addEventListener("click", () => { if (!state.started && !state.over) start(); });
+        restartBtn.addEventListener("click", restart);
+
+        function showCard(title, text) {
+            cardTitle.textContent = title;
+            cardText.textContent = text;
+            card.classList.add("show");
+        }
+        function hideCard() { card.classList.remove("show"); }
+
+        function start() {
+            state.started = true;
+            state.over = false;
+            hideCard();
+        }
+
+        function restart() {
+            // full reset
+            state.started = false;
+            state.over = false;
+            state.score = 0;
+            state.coins = 0;
+            state.t = 0;
+            state.speed = 520;
+            state.speedMult = 1.0;
+            state.spawnTimer = 0;
+            state.coinTimer = 0;
+            state.shake = 0;
+
+            runner.lane = 1;
+            runner.x = lanes[1];
+            runner.y = runner.baseY;
+            runner.vy = 0;
+            runner.onGround = true;
+            runner.slide = 0;
+            runner.invuln = 0;
+
+            obstacles.length = 0;
+            coins.length = 0;
+
+            scoreEl.textContent = "0";
+            coinsEl.textContent = "0";
+            speedEl.textContent = "1.0x";
+
+            showCard("Ready?", "Swipe: left/right lane, up jump, down slide. Press Start or Space.");
+        }
+
+        function gameOver() {
+            state.over = true;
+            state.started = false;
+            showCard("Game Over", `Score: ${Math.floor(state.score)} · Coins: ${state.coins}. Press R / Restart.`);
+        }
+
+        function changeLane(dir) {
+            runner.lane = clamp(runner.lane + dir, 0, 2);
+        }
+
+        function jump() {
+            if (!runner.onGround) return;
+            runner.onGround = false;
+            runner.vy = runner.jumpVel;
+        }
+
+        function slide() {
+            // slide reduces hitbox height
+            runner.slide = 0.55;
+        }
+
+        // Spawning
+        function spawnObstacle() {
+            // Don’t be evil: ensure spacing
+            const lane = Math.floor(Math.random() * 3);
+            const type = OB_TYPES[Math.floor(Math.random() * OB_TYPES.length)];
+            obstacles.push({
+                lane,
+                x: lanes[lane],
+                z: 0,                 // distance from runner along forward axis (0 near runner, positive ahead)
+                w: type.w,
+                h: type.h,
+                hitH: type.hitH,
+                kind: type.kind,
+                low: !!type.low,
+                // spawn ahead
+                dist: 1100 + Math.random() * 800
+            });
+        }
+
+        function spawnCoinLine() {
+            const lane = Math.floor(Math.random() * 3);
+            const count = 4 + Math.floor(Math.random() * 4);
+            const startDist = 950 + Math.random() * 650;
+            for (let i = 0; i < count; i++) {
+                coins.push({
+                    lane,
+                    x: lanes[lane],
+                    dist: startDist + i * 150,
+                    taken: false
+                });
+            }
+        }
+
+        // Drawing helpers
+        function drawMountainLayer(t, yBase, height, shade, speed) {
+            ctx.save();
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = shade;
+            ctx.beginPath();
+            const wave = (x) => yBase - Math.sin((x * 0.006) + t * speed) * height * 0.25 - Math.sin((x * 0.012) + t * speed * 1.2) * height * 0.12;
+            ctx.moveTo(0, H);
+            ctx.lineTo(0, wave(0));
+            for (let x = 0; x <= W; x += 18) {
+                ctx.lineTo(x, wave(x));
+            }
+            ctx.lineTo(W, H);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawTrees(t, yBase, density, color, speed, scale) {
+            ctx.save();
+            ctx.fillStyle = color;
+            for (let i = 0; i < density; i++) {
+                const sx = (i * (W / density) + (t * speed * 220)) % (W + 200) - 100;
+                const x = W - sx; // reverse
+                const h = 70 * scale + (i % 7) * 10 * scale;
+                const y = yBase - h * 0.2;
+                // simple pine
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - 16 * scale, y + 28 * scale);
+                ctx.lineTo(x - 8 * scale, y + 28 * scale);
+                ctx.lineTo(x - 24 * scale, y + 54 * scale);
+                ctx.lineTo(x - 12 * scale, y + 54 * scale);
+                ctx.lineTo(x - 30 * scale, y + 82 * scale);
+                ctx.lineTo(x + 30 * scale, y + 82 * scale);
+                ctx.lineTo(x + 12 * scale, y + 54 * scale);
+                ctx.lineTo(x + 24 * scale, y + 54 * scale);
+                ctx.lineTo(x + 8 * scale, y + 28 * scale);
+                ctx.lineTo(x + 16 * scale, y + 28 * scale);
+                ctx.closePath();
+                ctx.fill();
+                // trunk
+                ctx.fillStyle = "rgba(60,30,12,.55)";
+                ctx.fillRect(x - 4 * scale, y + 82 * scale, 8 * scale, 14 * scale);
+                ctx.fillStyle = color;
+            }
+            ctx.restore();
+        }
+
+        function drawTrack(t) {
+            // road perspective
+            const roadTopY = H * 0.40;
+            const roadBottomY = H * 0.98;
+            const roadTopW = 180;
+            const roadBottomW = 720;
+
+            // road fill
+            const g = ctx.createLinearGradient(0, roadTopY, 0, roadBottomY);
+            g.addColorStop(0, "rgba(10,40,20,0.2)");
+            g.addColorStop(0.2, "rgba(9,24,14,0.65)");
+            g.addColorStop(1, "rgba(4,10,7,0.9)");
+            ctx.fillStyle = g;
+
+            ctx.beginPath();
+            ctx.moveTo(W / 2 - roadTopW / 2, roadTopY);
+            ctx.lineTo(W / 2 + roadTopW / 2, roadTopY);
+            ctx.lineTo(W / 2 + roadBottomW / 2, roadBottomY);
+            ctx.lineTo(W / 2 - roadBottomW / 2, roadBottomY);
+            ctx.closePath();
+            ctx.fill();
+
+            // lane lines (moving)
+            ctx.strokeStyle = "rgba(255,255,255,0.16)";
+            ctx.lineWidth = 2;
+
+            const laneXTop = [W / 2 - roadTopW / 3, W / 2, W / 2 + roadTopW / 3];
+            const laneXBot = [W / 2 - roadBottomW / 3, W / 2, W / 2 + roadBottomW / 3];
+
+            for (let i = 0; i < laneXTop.length; i++) {
+                ctx.beginPath();
+                ctx.moveTo(laneXTop[i], roadTopY);
+                ctx.lineTo(laneXBot[i], roadBottomY);
+                ctx.stroke();
+            }
+
+            // speed stripes
+            ctx.strokeStyle = "rgba(255,255,255,0.14)";
+            ctx.lineWidth = 3;
+            const stripeCount = 16;
+            for (let i = 0; i < stripeCount; i++) {
+                const z = (i / stripeCount);
+                const move = (t * state.speedMult * 0.9) % 1;
+                let p = (z + move) % 1;
+
+                // perspective interpolation
+                const y = lerp(roadTopY, roadBottomY, p);
+                const wNow = lerp(roadTopW, roadBottomW, p);
+                const x1 = W / 2 - wNow * 0.03;
+                const x2 = W / 2 + wNow * 0.03;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y);
+                ctx.lineTo(x2, y);
+                ctx.stroke();
+            }
+        }
+
+        function project(laneX, dist) {
+            // dist: forward distance ahead of runner (higher = farther)
+            // simple perspective mapping
+            const roadTopY = H * 0.40;
+            const roadBottomY = H * 0.98;
+            const t = clamp(1 - (dist / 2200), 0.02, 1); // near=1, far~0
+            const y = lerp(roadTopY, roadBottomY, t);
+            const roadTopW = 180;
+            const roadBottomW = 720;
+            const wNow = lerp(roadTopW, roadBottomW, t);
+            // laneX is based on screen lanes[] but road narrows, so remap around center
+            const laneOffset = (laneX - W / 2) / (laneWidth); // approx -1,0,1
+            const x = W / 2 + laneOffset * (wNow / 3);
+            const scale = lerp(0.35, 1.05, t);
+            return { x, y, scale, t };
+        }
+
+        function drawCoin(coin) {
+            const p = project(coin.x, coin.dist);
+            const r = 14 * p.scale;
+
+            ctx.save();
+            ctx.globalAlpha = 0.95;
+            ctx.fillStyle = "#fbbf24";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y - 40 * p.scale, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "rgba(0,0,0,0.35)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y - 40 * p.scale, r - 2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = "rgba(255,255,255,0.55)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(p.x - 3, p.y - 43 * p.scale, r * 0.55, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawObstacle(ob) {
+            const p = project(ob.x, ob.dist);
+            const w = ob.w * p.scale;
+            const h = ob.h * p.scale;
+            const baseY = p.y - 40 * p.scale;
+
+            ctx.save();
+
+            // shadow
+            ctx.fillStyle = "rgba(0,0,0,0.25)";
+            ctx.beginPath();
+            ctx.ellipse(p.x, baseY + h * 0.55, w * 0.45, h * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (ob.kind === "gift") {
+                // gift box
+                ctx.fillStyle = "#ef4444";
+                roundRect(p.x - w / 2, baseY - h, w, h, 10 * p.scale, true, false);
+                ctx.fillStyle = "rgba(255,255,255,0.18)";
+                roundRect(p.x - w / 2, baseY - h, w, h, 10 * p.scale, false, true);
+
+                // ribbon
+                ctx.fillStyle = "#22c55e";
+                ctx.fillRect(p.x - w * 0.07, baseY - h, w * 0.14, h);
+                ctx.fillRect(p.x - w / 2, baseY - h * 0.55, w, h * 0.14);
+
+                // bow
+                ctx.fillStyle = "#16a34a";
+                ctx.beginPath();
+                ctx.ellipse(p.x - w * 0.14, baseY - h * 0.98, w * 0.15, h * 0.10, 0.2, 0, Math.PI * 2);
+                ctx.ellipse(p.x + w * 0.14, baseY - h * 0.98, w * 0.15, h * 0.10, -0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (ob.kind === "snowman") {
+                // snowman
+                ctx.fillStyle = "rgba(255,255,255,0.92)";
+                ctx.beginPath();
+                ctx.arc(p.x, baseY - h * 0.25, w * 0.30, 0, Math.PI * 2);
+                ctx.arc(p.x, baseY - h * 0.62, w * 0.22, 0, Math.PI * 2);
+                ctx.fill();
+
+                // scarf
+                ctx.fillStyle = "#ef4444";
+                ctx.fillRect(p.x - w * 0.25, baseY - h * 0.55, w * 0.5, h * 0.10);
+                ctx.fillRect(p.x + w * 0.1, baseY - h * 0.55, w * 0.14, h * 0.22);
+
+                // eyes/buttons
+                ctx.fillStyle = "rgba(0,0,0,0.55)";
+                ctx.beginPath();
+                ctx.arc(p.x - w * 0.07, baseY - h * 0.67, 3 * p.scale, 0, Math.PI * 2);
+                ctx.arc(p.x + w * 0.07, baseY - h * 0.67, 3 * p.scale, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#111827";
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, baseY - h * (0.38 - i * 0.12), 3.4 * p.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // carrot
+                ctx.fillStyle = "#fb923c";
+                ctx.beginPath();
+                ctx.moveTo(p.x, baseY - h * 0.62);
+                ctx.lineTo(p.x + w * 0.15, baseY - h * 0.60);
+                ctx.lineTo(p.x, baseY - h * 0.58);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            if (ob.kind === "caneGate") {
+                // candy cane gate (encourages sliding sometimes)
+                const postW = w * 0.18;
+                const postH = h * 1.05;
+
+                // left cane
+                drawCandyCane(p.x - w * 0.35, baseY - postH, postW, postH, p.scale);
+                // right cane
+                drawCandyCane(p.x + w * 0.35, baseY - postH, postW, postH, p.scale);
+
+                // garland bar
+                ctx.fillStyle = "#22c55e";
+                roundRect(p.x - w * 0.55, baseY - h * 0.78, w * 1.1, h * 0.16, 10 * p.scale, true, false);
+                ctx.fillStyle = "rgba(0,0,0,0.20)";
+                roundRect(p.x - w * 0.55, baseY - h * 0.78, w * 1.1, h * 0.16, 10 * p.scale, false, true);
+
+                // lights
+                const lights = 7;
+                for (let i = 0; i < lights; i++) {
+                    const lx = lerp(p.x - w * 0.48, p.x + w * 0.48, i / (lights - 1));
+                    ctx.fillStyle = i % 2 ? "#60a5fa" : "#fbbf24";
+                    ctx.beginPath();
+                    ctx.arc(lx, baseY - h * 0.70, 4.5 * p.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawCandyCane(x, y, w, h, scale) {
+            // y is top
+            ctx.save();
+            ctx.lineWidth = 10 * scale;
+            ctx.lineCap = "round";
+            // base white stroke
+            ctx.strokeStyle = "rgba(255,255,255,0.92)";
+            ctx.beginPath();
+            ctx.moveTo(x, y + h * 0.22);
+            ctx.quadraticCurveTo(x + w * 0.9, y, x + w * 1.3, y + h * 0.22);
+            ctx.lineTo(x + w * 1.3, y + h);
+            ctx.stroke();
+
+            // red stripes
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 6.2 * scale;
+            for (let i = 0; i < 7; i++) {
+                const yy = y + h * (0.30 + i * 0.10);
+                ctx.beginPath();
+                ctx.moveTo(x + w * 0.8, yy - 10 * scale);
+                ctx.lineTo(x + w * 1.6, yy + 10 * scale);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function roundRect(x, y, w, h, r, fill, stroke) {
+            const rr = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + rr, y);
+            ctx.arcTo(x + w, y, x + w, y + h, rr);
+            ctx.arcTo(x + w, y + h, x, y + h, rr);
+            ctx.arcTo(x, y + h, x, y, rr);
+            ctx.arcTo(x, y, x + w, y, rr);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        }
+
+        function drawRunner() {
+            // runner anchored near bottom on road
+            const x = lanes[runner.lane];
+            runner.x = lerp(runner.x, x, 0.18);
+
+            const isSliding = runner.slide > 0;
+            const bodyH = isSliding ? runner.h * 0.62 : runner.h;
+            const y = runner.y;
+
+            // little shadow
+            ctx.fillStyle = "rgba(0,0,0,0.25)";
+            ctx.beginPath();
+            ctx.ellipse(runner.x, y + 36, 34, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // outfit
+            ctx.save();
+            if (runner.invuln > 0) ctx.globalAlpha = 0.75 + 0.25 * Math.sin(state.t * 18);
+
+            // body
+            ctx.fillStyle = "#0ea5e9";
+            roundRect(runner.x - runner.w / 2, y - bodyH, runner.w, bodyH, 16, true, false);
+
+            // jacket stripe
+            ctx.fillStyle = "rgba(255,255,255,0.22)";
+            roundRect(runner.x - runner.w / 2, y - bodyH, runner.w, bodyH * 0.38, 16, true, false);
+
+            // scarf
+            ctx.fillStyle = "#ef4444";
+            roundRect(runner.x - runner.w * 0.52, y - bodyH + 8, runner.w * 1.04, 12, 999, true, false);
+
+            // head
+            ctx.fillStyle = "rgba(255,255,255,0.92)";
+            ctx.beginPath();
+            ctx.arc(runner.x, y - bodyH - 18, 18, 0, Math.PI * 2);
+            ctx.fill();
+
+            // hat
+            ctx.fillStyle = "#ef4444";
+            ctx.beginPath();
+            ctx.arc(runner.x, y - bodyH - 26, 14, Math.PI, 0);
+            ctx.lineTo(runner.x + 14, y - bodyH - 26);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.92)";
+            ctx.beginPath();
+            ctx.arc(runner.x + 14, y - bodyH - 26, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function update(dt) {
+            state.t += dt;
+
+            // ramp speed
+            state.speedMult = 1.0 + Math.min(1.2, state.score / 2000);
+            speedEl.textContent = state.speedMult.toFixed(1) + "x";
+
+            state.score += dt * 120 * state.speedMult;
+            scoreEl.textContent = String(Math.floor(state.score));
+
+            // runner physics
+            runner.invuln = Math.max(0, runner.invuln - dt);
+            runner.slide = Math.max(0, runner.slide - dt);
+
+            if (!runner.onGround) {
+                runner.vy += runner.g * dt;
+                runner.y += runner.vy * dt;
+                if (runner.y >= runner.baseY) {
+                    runner.y = runner.baseY;
+                    runner.vy = 0;
+                    runner.onGround = true;
+                }
+            }
+
+            // spawn obstacles
+            state.spawnTimer -= dt * state.speedMult;
+            if (state.spawnTimer <= 0) {
+                spawnObstacle();
+                // spawn interval decreases over time
+                const base = 0.95 - Math.min(0.55, state.score / 5000);
+                state.spawnTimer = clamp(base + Math.random() * 0.35, 0.28, 1.15);
+            }
+
+            // spawn coins
+            state.coinTimer -= dt * state.speedMult;
+            if (state.coinTimer <= 0) {
+                spawnCoinLine();
+                state.coinTimer = 1.2 + Math.random() * 0.9;
+            }
+
+            const forward = state.speed * dt * state.speedMult;
+
+            // move obstacles toward runner
+            for (const ob of obstacles) {
+                ob.dist -= forward;
+            }
+            for (const coin of coins) {
+                coin.dist -= forward;
+            }
+
+            // remove passed
+            while (obstacles.length && obstacles[0].dist < -200) obstacles.shift();
+            while (coins.length && coins[0].dist < -200) coins.shift();
+
+            // collisions
+            // runner collision box (in road space)
+            const isSliding = runner.slide > 0;
+            const hitH = isSliding ? runner.h * 0.52 : runner.h;
+            const runnerDist = 180; // "runner plane" in dist units for collision checks
+
+            // coin pickup
+            for (const coin of coins) {
+                if (coin.taken) continue;
+                if (coin.lane !== runner.lane) continue;
+                if (coin.dist < runnerDist + 80 && coin.dist > runnerDist - 80) {
+                    // y check: if jumping, coin higher
+                    const jumping = !runner.onGround;
+                    if (!jumping) {
+                        coin.taken = true;
+                        state.coins += 1;
+                        coinsEl.textContent = String(state.coins);
+                    }
+                }
+            }
+
+            // obstacle hit
+            if (runner.invuln <= 0) {
+                for (const ob of obstacles) {
+                    if (ob.lane !== runner.lane) continue;
+                    if (ob.dist < runnerDist + 85 && ob.dist > runnerDist - 65) {
+                        // height logic:
+                        const jumping = !runner.onGround;
+                        const sliding = runner.slide > 0;
+
+                        if (ob.kind === "caneGate") {
+                            // gate bar is "low": jumping is safe, sliding is safe-ish, standing might collide
+                            // We'll make it require slide OR jump depending on randomness by checking bar height
+                            // Simple rule: if not sliding and not jumping -> hit
+                            if (!sliding && !jumping) {
+                                state.shake = 0.25;
+                                runner.invuln = 0.9;
+                                gameOver();
+                                return;
+                            }
+                        } else {
+                            // gift/snowman: jump over is safe, otherwise hit
+                            if (!jumping) {
+                                state.shake = 0.25;
+                                runner.invuln = 0.9;
+                                gameOver();
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            state.shake = Math.max(0, state.shake - dt);
+        }
+
+        function render() {
+            // camera shake
+            let sx = 0, sy = 0;
+            if (state.shake > 0) {
+                const m = state.shake * 10;
+                sx = (Math.random() * 2 - 1) * m;
+                sy = (Math.random() * 2 - 1) * m;
+            }
+
+            ctx.save();
+            ctx.translate(sx, sy);
+
+            // sky / background
+            const sky = ctx.createLinearGradient(0, 0, 0, H);
+            sky.addColorStop(0, "#0b5a2c");
+            sky.addColorStop(0.55, "#05341b");
+            sky.addColorStop(1, "#02140b");
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, W, H);
+
+            // sun glow
+            ctx.fillStyle = "rgba(52,211,153,0.12)";
+            ctx.beginPath();
+            ctx.arc(W * 0.18, H * 0.22, 140, 0, Math.PI * 2);
+            ctx.fill();
+
+            // mountains (green, fresh)
+            drawMountainLayer(state.t, H * 0.42, 110, "rgba(18,88,44,0.95)", 0.08);
+            drawMountainLayer(state.t, H * 0.48, 90, "rgba(10,60,30,0.95)", 0.12);
+
+            // forests
+            drawTrees(state.t, H * 0.58, 18, "rgba(16,120,64,0.85)", 0.10, 1.0);
+            drawTrees(state.t, H * 0.64, 22, "rgba(10,90,48,0.85)", 0.16, 1.15);
+
+            // track
+            drawTrack(state.t);
+
+            // draw far-to-near: sort by dist descending so nearer draws last
+            const drawables = [];
+            for (const coin of coins) if (!coin.taken) drawables.push({ kind: "coin", ref: coin, dist: coin.dist });
+            for (const ob of obstacles) drawables.push({ kind: "ob", ref: ob, dist: ob.dist });
+            drawables.sort((a, b) => b.dist - a.dist);
+
+            for (const d of drawables) {
+                if (d.dist < -120) continue;
+                if (d.kind === "coin") drawCoin(d.ref);
+                else drawObstacle(d.ref);
+            }
+
+            // runner
+            drawRunner();
+
+            // foreground mist
+            const mist = ctx.createLinearGradient(0, H * 0.75, 0, H);
+            mist.addColorStop(0, "rgba(0,0,0,0)");
+            mist.addColorStop(1, "rgba(0,0,0,0.38)");
+            ctx.fillStyle = mist;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.restore();
+        }
+
+        // Main loop
+        let last = performance.now();
+        function loop(now) {
+            const dt = Math.min(0.033, (now - last) / 1000);
+            last = now;
+
+            if (state.started && !state.over) {
+                update(dt);
+            }
+            render();
+            requestAnimationFrame(loop);
+        }
+
+        // Prevent scroll on iOS while swiping
+        document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+
+        // Init
+        function boot() {
+            restart();
+            requestAnimationFrame(loop);
+        }
+        boot();
+    </script>
+</body>
+
+</html>

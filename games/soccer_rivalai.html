@@ -1,0 +1,1315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1v1 Mini Soccer (First to 3)</title>
+    <style>
+      :root {
+        --bg: #071521;
+        --panel: #0e2233;
+        --line: rgba(255, 255, 255, 0.18);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.65);
+        --left: #2dd4bf;
+        --right: #60a5fa;
+        --ball: #fbbf24;
+        --danger: #fb7185;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(
+            1100px 650px at 50% 15%,
+            rgba(45, 212, 191, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 550px at 70% 70%,
+            rgba(96, 165, 250, 0.16),
+            transparent 55%
+          ),
+          radial-gradient(
+            1200px 800px at 15% 80%,
+            rgba(251, 191, 36, 0.12),
+            transparent 55%
+          ),
+          linear-gradient(180deg, #04101a, var(--bg));
+        color: var(--text);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial;
+        padding: 24px;
+      }
+
+      .wrap {
+        width: min(980px, 100%);
+        display: grid;
+        gap: 14px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .title h1 {
+        margin: 0;
+        font-size: clamp(18px, 2.4vw, 26px);
+        letter-spacing: 0.2px;
+        font-weight: 800;
+      }
+
+      .title p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .hud {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(6px);
+      }
+
+      .badge {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+      }
+
+      .badge.left {
+        background: var(--left);
+      }
+
+      .badge.right {
+        background: var(--right);
+      }
+
+      .score {
+        font-weight: 900;
+        letter-spacing: 0.3px;
+      }
+
+      .goalTo {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        padding-left: 6px;
+      }
+
+      .mode {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(6px);
+      }
+
+      .mode label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
+      }
+
+      .mode select {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: rgba(255, 255, 255, 0.9);
+        border-radius: 999px;
+        padding: 6px 10px;
+        outline: none;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .board {
+        position: relative;
+        background: linear-gradient(
+          180deg,
+          rgba(14, 34, 51, 0.95),
+          rgba(9, 24, 37, 0.96)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+        background:
+          radial-gradient(
+            900px 600px at 50% 50%,
+            rgba(45, 212, 191, 0.08),
+            transparent 60%
+          ),
+          radial-gradient(
+            700px 450px at 60% 70%,
+            rgba(96, 165, 250, 0.08),
+            transparent 55%
+          ),
+          linear-gradient(180deg, rgba(5, 24, 35, 0.75), rgba(4, 18, 28, 0.85));
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        padding: 18px;
+      }
+
+      .card {
+        pointer-events: none;
+        max-width: 640px;
+        width: min(640px, 96%);
+        border-radius: 20px;
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(10px);
+        padding: 18px 16px;
+        text-align: center;
+        transform: translateY(-4px);
+        opacity: 0;
+        transition:
+          opacity 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .card.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .card h2 {
+        margin: 0 0 6px;
+        font-size: clamp(18px, 2.2vw, 28px);
+        font-weight: 900;
+        letter-spacing: 0.2px;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .mini {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
+      }
+
+      kbd {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 11px;
+        padding: 3px 7px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="title">
+          <h1>1v1 Mini Soccer</h1>
+          <p>
+            First to <b>3</b> goals wins. Now featuring: a bot that will
+            absolutely judge you silently.
+          </p>
+        </div>
+
+        <div class="hud">
+          <div class="mode">
+            <label for="modeSel">Mode</label>
+            <select id="modeSel">
+              <option value="single" selected>Singleplayer (vs AI)</option>
+              <option value="multi">Multiplayer</option>
+              <option value="online">Online (2 players)</option>
+            </select>
+          </div>
+
+          <div class="pill">
+            <span class="badge left"></span>
+            <span>Left</span>
+            <span class="score" id="scoreL">0</span>
+            <span class="goalTo">/ 3</span>
+          </div>
+          <div class="pill">
+            <span class="badge right"></span>
+            <span>Right</span>
+            <span class="score" id="scoreR">0</span>
+            <span class="goalTo">/ 3</span>
+          </div>
+          <div class="hint">
+            Single: Left AI · Right <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd
+            ><kbd>→</kbd> · Multi: Left <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd
+            ><kbd>D</kbd> · Online: P1 WASD, P2 Arrows · Restart: <kbd>R</kbd>
+          </div>
+        </div>
+      </div>
+
+      <div class="board">
+        <canvas
+          id="game"
+          width="960"
+          height="540"
+          aria-label="Mini Soccer"
+        ></canvas>
+        <div class="overlay">
+          <div class="card" id="msgCard">
+            <h2 id="msgTitle">Kick off</h2>
+            <p id="msgText">
+              Pick a mode. Press Space to start. First to 3 wins.
+            </p>
+            <div class="mini">
+              <span>Press <kbd>Space</kbd> to start</span>
+              <span>Press <kbd>R</kbd> to reset anytime</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      const scoreLel = document.getElementById("scoreL");
+      const scoreRel = document.getElementById("scoreR");
+
+      const msgCard = document.getElementById("msgCard");
+      const msgTitle = document.getElementById("msgTitle");
+      const msgText = document.getElementById("msgText");
+
+      const modeSel = document.getElementById("modeSel");
+
+      const GOALS_TO_WIN = 3;
+
+      const FIELD = {
+        x: 30,
+        y: 30,
+        w: canvas.width - 60,
+        h: canvas.height - 60,
+        line: "rgba(255,255,255,0.18)",
+      };
+
+      const GOAL = { w: 18, h: 150 };
+
+      const keys = new Set();
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      function randRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const state = {
+        started: false,
+        over: false,
+        pauseTimer: 0,
+        scoreL: 0,
+        scoreR: 0,
+        t: 0,
+        aiKickTimer: 0,
+        mode: "single", // "single" | "multi" | "online"
+      };
+
+      const net = {
+        ws: null,
+        playerId: null,
+        isHost: false,
+        peerCount: 0,
+        connected: false,
+        remoteInput: { ax: 0, ay: 0 },
+        lastInputSend: 0,
+        lastStateSend: 0,
+      };
+
+      const WS_PORT = 8080;
+
+      function getWsUrl() {
+        if (location.protocol === "file:" || !location.hostname)
+          return `ws://localhost:${WS_PORT}`;
+        const proto = location.protocol === "https:" ? "wss" : "ws";
+        return `${proto}://${location.hostname}:${WS_PORT}`;
+      }
+
+      function closeSocket() {
+        if (net.ws) {
+          try {
+            net.ws.close();
+          } catch {}
+        }
+        net.ws = null;
+        net.connected = false;
+        net.playerId = null;
+        net.isHost = false;
+        net.peerCount = 0;
+        net.remoteInput.ax = 0;
+        net.remoteInput.ay = 0;
+      }
+
+      function connectOnline() {
+        closeSocket();
+        showMessage("Connecting", `Connecting to ${getWsUrl()}...`);
+
+        const ws = new WebSocket(getWsUrl());
+        net.ws = ws;
+
+        ws.addEventListener("open", () => {
+          net.connected = true;
+        });
+
+        ws.addEventListener("message", (ev) => {
+          let data;
+          try {
+            data = JSON.parse(ev.data);
+          } catch {
+            return;
+          }
+          if (data.type === "init") {
+            net.playerId = data.playerId;
+            net.isHost = data.playerId === 1;
+            net.peerCount = data.players || 1;
+            hardReset();
+          } else if (data.type === "peer") {
+            net.peerCount = data.players || net.peerCount;
+            if (state.mode === "online") hardReset();
+          } else if (data.type === "peer-left") {
+            net.peerCount = Math.max(1, net.peerCount - 1);
+            if (state.mode === "online") {
+              state.started = false;
+              showMessage(
+                "Opponent left",
+                "Waiting for another player to join.",
+              );
+            }
+          } else if (data.type === "input" && net.isHost) {
+            net.remoteInput = data.input || net.remoteInput;
+          } else if (data.type === "state" && !net.isHost) {
+            applyNetworkState(data.payload);
+          }
+        });
+
+        ws.addEventListener("close", () => {
+          if (state.mode === "online") {
+            showMessage(
+              "Disconnected",
+              "Connection closed. Restart server and reselect Online.",
+            );
+          }
+          closeSocket();
+        });
+      }
+
+      function sendMessage(payload) {
+        if (!net.ws || net.ws.readyState !== 1) return;
+        net.ws.send(JSON.stringify(payload));
+      }
+
+      function sendRemoteInput(dt) {
+        if (!net.connected || net.isHost) return;
+        net.lastInputSend += dt;
+        if (net.lastInputSend < 1 / 30) return;
+        net.lastInputSend = 0;
+
+        const axes = computeAxes({
+          up: "arrowup",
+          down: "arrowdown",
+          left: "arrowleft",
+          right: "arrowright",
+        });
+        sendMessage({ type: "input", input: axes });
+      }
+
+      function buildStatePayload() {
+        return {
+          state: {
+            started: state.started,
+            over: state.over,
+            pauseTimer: state.pauseTimer,
+            scoreL: state.scoreL,
+            scoreR: state.scoreR,
+            t: state.t,
+          },
+          left: { x: left.x, y: left.y, vx: left.vx, vy: left.vy },
+          right: { x: right.x, y: right.y, vx: right.vx, vy: right.vy },
+          ball: { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy },
+          gkL: { x: gkL.x, y: gkL.y, vy: gkL.vy },
+          gkR: { x: gkR.x, y: gkR.y, vy: gkR.vy },
+        };
+      }
+
+      modeSel.addEventListener("change", () => {
+        state.mode = modeSel.value;
+        if (state.mode === "online") connectOnline();
+        else closeSocket();
+        hardReset();
+      });
+
+      const left = {
+        x: FIELD.x + 120,
+        y: canvas.height / 2,
+        r: 18,
+        maxSpeed: 260,
+        vx: 0,
+        vy: 0,
+        color: "#2dd4bf",
+      };
+
+      const right = {
+        x: FIELD.x + FIELD.w - 120,
+        y: canvas.height / 2,
+        r: 18,
+        maxSpeed: 260,
+        vx: 0,
+        vy: 0,
+        color: "#60a5fa",
+      };
+
+      const ball = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        r: 10,
+        vx: 0,
+        vy: 0,
+      };
+
+      // Goalkeepers
+      const keeper = {
+        w: 14,
+        h: 46,
+        inset: 10,
+        speed: 220,
+        driftAmp: 22,
+        driftHz: 0.85,
+      };
+
+      const gkL = {
+        x: FIELD.x + keeper.inset,
+        y: canvas.height / 2,
+        vy: 0,
+        color: "rgba(45,212,191,0.95)",
+      };
+      const gkR = {
+        x: FIELD.x + FIELD.w - keeper.inset - keeper.w,
+        y: canvas.height / 2,
+        vy: 0,
+        color: "rgba(96,165,250,0.95)",
+      };
+
+      function goalMouth() {
+        return {
+          top: canvas.height / 2 - GOAL.h / 2,
+          bottom: canvas.height / 2 + GOAL.h / 2,
+        };
+      }
+
+      function showMessage(title, text) {
+        msgTitle.textContent = title;
+        msgText.textContent = text;
+        msgCard.classList.add("show");
+      }
+
+      function hideMessage() {
+        msgCard.classList.remove("show");
+      }
+
+      function resetPositions(kickoffDir = 0) {
+        left.x = FIELD.x + 120;
+        left.y = canvas.height / 2;
+        left.vx = left.vy = 0;
+        right.x = FIELD.x + FIELD.w - 120;
+        right.y = canvas.height / 2;
+        right.vx = right.vy = 0;
+
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        ball.vx = kickoffDir ? kickoffDir * 120 : 0;
+        ball.vy = randRange(-30, 30);
+
+        gkL.y = canvas.height / 2;
+        gkL.vy = 0;
+        gkR.y = canvas.height / 2;
+        gkR.vy = 0;
+      }
+
+      function hardReset() {
+        state.started = false;
+        state.over = false;
+        state.pauseTimer = 0;
+        state.scoreL = 0;
+        state.scoreR = 0;
+        state.t = 0;
+
+        scoreLel.textContent = "0";
+        scoreRel.textContent = "0";
+
+        resetPositions(0);
+
+        if (state.mode === "online") {
+          const role = net.playerId
+            ? net.isHost
+              ? "Host (Left)"
+              : "Guest (Right)"
+            : "Connecting...";
+          const status =
+            net.peerCount < 2
+              ? "Waiting for opponent to join."
+              : net.isHost
+                ? "Press Space to start."
+                : "Waiting for host to start.";
+          showMessage("Online match", `${role} ${status}`);
+          return;
+        }
+
+        const modeText =
+          state.mode === "single"
+            ? "Singleplayer: Left side is AI."
+            : "Multiplayer: Right uses arrow keys.";
+
+        showMessage(
+          "Kick off",
+          `${modeText} Press Space to start. First to 3 wins.`,
+        );
+      }
+
+      function goalScored(side) {
+        if (side === "L") state.scoreL++;
+        else state.scoreR++;
+
+        scoreLel.textContent = String(state.scoreL);
+        scoreRel.textContent = String(state.scoreR);
+
+        const who = side === "L" ? "Left" : "Right";
+        const isWin =
+          state.scoreL >= GOALS_TO_WIN || state.scoreR >= GOALS_TO_WIN;
+
+        state.pauseTimer = 1.15;
+        resetPositions(side === "L" ? -1 : 1);
+
+        if (isWin) {
+          state.over = true;
+          showMessage(
+            `${who} wins!`,
+            `Final score: ${state.scoreL} - ${state.scoreR}. Press R to restart.`,
+          );
+        } else {
+          showMessage(
+            `${who} scored!`,
+            `Score: ${state.scoreL} - ${state.scoreR}. Resuming...`,
+          );
+          setTimeout(() => {
+            if (!state.over) hideMessage();
+          }, 900);
+        }
+      }
+
+      // Input
+      window.addEventListener(
+        "keydown",
+        (e) => {
+          if (
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(
+              e.key,
+            )
+          )
+            e.preventDefault();
+          keys.add(e.key.toLowerCase());
+
+          if (e.key === " " && !state.started) {
+            if (state.mode === "online") {
+              if (net.peerCount < 2) {
+                showMessage("Waiting", "Need two players connected to start.");
+                return;
+              }
+              if (net.isHost) {
+                state.started = true;
+                hideMessage();
+              } else {
+                showMessage("Waiting for host", "Host starts the match.");
+              }
+            } else {
+              state.started = true;
+              hideMessage();
+            }
+          }
+          if (e.key.toLowerCase() === "r") {
+            if (state.mode === "online" && !net.isHost) {
+              showMessage("Host only", "Only the host can restart.");
+              return;
+            }
+            hardReset();
+          }
+        },
+        { passive: false },
+      );
+
+      window.addEventListener("keyup", (e) => {
+        keys.delete(e.key.toLowerCase());
+      });
+
+      function computeAxes(controls) {
+        let ax = 0,
+          ay = 0;
+        if (keys.has(controls.left)) ax -= 1;
+        if (keys.has(controls.right)) ax += 1;
+        if (keys.has(controls.up)) ay -= 1;
+        if (keys.has(controls.down)) ay += 1;
+        return { ax, ay };
+      }
+
+      function applyInputAxes(p, ax, ay, dt) {
+        if (ax !== 0 || ay !== 0) {
+          const m = Math.hypot(ax, ay);
+          ax /= m;
+          ay /= m;
+        }
+
+        const accel = 1500;
+        p.vx += ax * accel * dt;
+        p.vy += ay * accel * dt;
+
+        const damp = Math.pow(0.0008, dt);
+        p.vx *= damp;
+        p.vy *= damp;
+
+        const sp = Math.hypot(p.vx, p.vy);
+        if (sp > p.maxSpeed) {
+          p.vx = (p.vx / sp) * p.maxSpeed;
+          p.vy = (p.vy / sp) * p.maxSpeed;
+        }
+
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        const minX = FIELD.x + p.r;
+        const maxX = FIELD.x + FIELD.w - p.r;
+        const minY = FIELD.y + p.r;
+        const maxY = FIELD.y + FIELD.h - p.r;
+
+        p.x = clamp(p.x, minX, maxX);
+        p.y = clamp(p.y, minY, maxY);
+      }
+
+      function applyPlayerInput(p, controls, dt) {
+        const axes = computeAxes(controls);
+        applyInputAxes(p, axes.ax, axes.ay, dt);
+      }
+
+      // === AI control ===
+      function applyAI(p, side, dt) {
+        // Simple state: defend if ball is on your side or fast towards you, otherwise go hunt ball.
+        const isLeft = side === "L";
+        const defendX = isLeft ? FIELD.x + 160 : FIELD.x + FIELD.w - 160; // "defensive line"
+        const goalX = isLeft ? FIELD.x + FIELD.w : FIELD.x;
+        const goalY = canvas.height / 2;
+
+        const centerX = FIELD.x + FIELD.w / 2;
+        const ballOnSide = isLeft
+          ? ball.x < centerX - 10
+          : ball.x > centerX + 10;
+        const ballComingFast = isLeft ? ball.vx < -120 : ball.vx > 120;
+
+        // Aim target
+        let tx, ty;
+
+        const { top: goalTop, bottom: goalBottom } = goalMouth();
+        const cornerInset = 22;
+        let targetY = goalY;
+        if (ball.y < gkL.y) targetY = gkL.y + GOAL.h * 0.25;
+        else targetY = gkL.y - GOAL.h * 0.25;
+        targetY = clamp(
+          targetY,
+          goalTop + cornerInset,
+          goalBottom - cornerInset,
+        );
+
+        const dirX = goalX - ball.x;
+        const dirY = targetY - ball.y;
+        const dirM = Math.hypot(dirX, dirY) || 1;
+        const nx = dirX / dirM;
+        const ny = dirY / dirM;
+        const behindX = ball.x - nx * (ball.r + p.r + 12);
+        const behindY = ball.y - ny * (ball.r + p.r + 12);
+        const throughX = ball.x + nx * (ball.r + 26);
+        const throughY = ball.y + ny * (ball.r + 26);
+
+        if (ballOnSide || ballComingFast) {
+          // defend: stay near defend line and align to ball Y (but not too perfectly)
+          tx = defendX;
+          ty = clamp(
+            ball.y + Math.sin(state.t * 3.2) * 14,
+            FIELD.y + p.r,
+            FIELD.y + FIELD.h - p.r,
+          );
+        } else {
+          // attack: get behind the ball to drive it toward left goal
+          tx = behindX;
+          ty = behindY;
+        }
+
+        // If ball is very close, rush it
+        const dx = ball.x - p.x;
+        const dy = ball.y - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 150) {
+          // Drive through the ball when already behind it; otherwise get behind first.
+          const isBehind = isLeft
+            ? p.x < ball.x - p.r * 0.15
+            : p.x > ball.x + p.r * 0.15;
+          if (isBehind) {
+            tx = throughX;
+            ty = throughY;
+          } else {
+            tx = behindX;
+            ty = behindY;
+          }
+        }
+
+        // Add a direct "kick" impulse when close and behind the ball.
+        if (state.aiKickTimer > 0) {
+          state.aiKickTimer -= dt;
+        } else if (
+          dist < p.r + ball.r + 2 &&
+          (isLeft ? p.x < ball.x - 2 : p.x > ball.x + 2)
+        ) {
+          const kx = nx;
+          const ky = ny;
+          const power = 320;
+          ball.vx += kx * power;
+          ball.vy += ky * power;
+          state.aiKickTimer = 0.18;
+        }
+
+        // Convert target into input vector
+        let ax = tx - p.x;
+        let ay = ty - p.y;
+        const m = Math.hypot(ax, ay);
+        if (m > 0.001) {
+          ax /= m;
+          ay /= m;
+        }
+
+        // Move using same physics style
+        let accel = 1450; // a bit lower than human for fairness
+        let cap = p.maxSpeed * 0.92;
+        if (dist < 170) {
+          accel = 1750;
+          cap = p.maxSpeed * 1.04;
+        }
+        p.vx += ax * accel * dt;
+        p.vy += ay * accel * dt;
+
+        const damp = Math.pow(0.0009, dt);
+        p.vx *= damp;
+        p.vy *= damp;
+
+        // Slightly lower cap
+        const sp = Math.hypot(p.vx, p.vy);
+        if (sp > cap) {
+          p.vx = (p.vx / sp) * cap;
+          p.vy = (p.vy / sp) * cap;
+        }
+
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        const minX = FIELD.x + p.r;
+        const maxX = FIELD.x + FIELD.w - p.r;
+        const minY = FIELD.y + p.r;
+        const maxY = FIELD.y + FIELD.h - p.r;
+
+        p.x = clamp(p.x, minX, maxX);
+        p.y = clamp(p.y, minY, maxY);
+      }
+
+      function collideCircle(a, b) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d = Math.hypot(dx, dy);
+        const minD = a.r + b.r;
+        if (d === 0 || d >= minD) return;
+
+        const nx = dx / d;
+        const ny = dy / d;
+        const overlap = minD - d;
+
+        b.x += nx * overlap;
+        b.y += ny * overlap;
+
+        const relVx = (b.vx || 0) - (a.vx || 0);
+        const relVy = (b.vy || 0) - (a.vy || 0);
+        const relSpeed = Math.hypot(relVx, relVy);
+
+        const baseKick = 260;
+        let kick = baseKick + relSpeed * 0.7;
+        if (state.mode === "single" && a === left) {
+          const isBehind = a.x < b.x - a.r * 0.2;
+          if (isBehind) kick *= 1.28;
+        }
+
+        b.vx += nx * kick;
+        b.vy += ny * kick;
+      }
+
+      function stepKeeper(gk, side, dt) {
+        const { top, bottom } = goalMouth();
+        const drift =
+          Math.sin(
+            state.t * Math.PI * 2 * keeper.driftHz + (side === "L" ? 0 : 1.8),
+          ) * keeper.driftAmp;
+
+        const rawTarget = ball.y + drift;
+        const minY = top + keeper.h / 2;
+        const maxY = bottom - keeper.h / 2;
+        const targetY = clamp(rawTarget, minY, maxY);
+
+        const dy = targetY - gk.y;
+        const desiredVy = clamp(dy * 7.5, -keeper.speed, keeper.speed);
+
+        gk.vy += (desiredVy - gk.vy) * clamp(10 * dt, 0, 1);
+        gk.y += gk.vy * dt;
+
+        gk.y = clamp(gk.y, minY, maxY);
+
+        if (side === "L") gk.x = FIELD.x + keeper.inset;
+        else gk.x = FIELD.x + FIELD.w - keeper.inset - keeper.w;
+      }
+
+      function collideBallWithKeeper(gk) {
+        const rx = gk.x;
+        const ry = gk.y - keeper.h / 2;
+        const rw = keeper.w;
+        const rh = keeper.h;
+
+        const cx = clamp(ball.x, rx, rx + rw);
+        const cy = clamp(ball.y, ry, ry + rh);
+
+        const dx = ball.x - cx;
+        const dy = ball.y - cy;
+        const d2 = dx * dx + dy * dy;
+
+        if (d2 > ball.r * ball.r) return;
+
+        const d = Math.sqrt(d2) || 0.0001;
+        const nx = dx / d;
+        const ny = dy / d;
+
+        const overlap = ball.r - d + 0.01;
+        ball.x += nx * overlap;
+        ball.y += ny * overlap;
+
+        const vn = ball.vx * nx + ball.vy * ny;
+        if (vn < 0) {
+          ball.vx -= 1.8 * vn * nx;
+          ball.vy -= 1.8 * vn * ny;
+        }
+
+        ball.vy += gk.vy * 0.55;
+        ball.vx *= 0.98;
+        ball.vy *= 0.98;
+      }
+
+      function applyNetworkState(payload) {
+        if (!payload) return;
+        const ps = payload.state || {};
+
+        state.started = !!ps.started;
+        state.over = !!ps.over;
+        state.pauseTimer = ps.pauseTimer || 0;
+        state.scoreL = ps.scoreL ?? state.scoreL;
+        state.scoreR = ps.scoreR ?? state.scoreR;
+        state.t = ps.t ?? state.t;
+
+        if (payload.left) Object.assign(left, payload.left);
+        if (payload.right) Object.assign(right, payload.right);
+        if (payload.ball) Object.assign(ball, payload.ball);
+        if (payload.gkL) Object.assign(gkL, payload.gkL);
+        if (payload.gkR) Object.assign(gkR, payload.gkR);
+
+        scoreLel.textContent = String(state.scoreL);
+        scoreRel.textContent = String(state.scoreR);
+
+        if (state.over) {
+          showMessage(
+            "Game over",
+            `Final score: ${state.scoreL} - ${state.scoreR}. Host can restart.`,
+          );
+        } else if (state.started) {
+          hideMessage();
+        } else if (state.mode === "online") {
+          const status =
+            net.peerCount < 2
+              ? "Waiting for opponent to join."
+              : "Waiting for host to start.";
+          showMessage("Online match", status);
+        }
+      }
+
+      function stepBall(dt) {
+        const friction = Math.pow(0.15, dt);
+        ball.vx *= friction;
+        ball.vy *= friction;
+
+        const maxBall = 620;
+        const sp = Math.hypot(ball.vx, ball.vy);
+        if (sp > maxBall) {
+          ball.vx = (ball.vx / sp) * maxBall;
+          ball.vy = (ball.vy / sp) * maxBall;
+        }
+
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+
+        const minX = FIELD.x + ball.r;
+        const maxX = FIELD.x + FIELD.w - ball.r;
+        const minY = FIELD.y + ball.r;
+        const maxY = FIELD.y + FIELD.h - ball.r;
+
+        const { top: goalTop, bottom: goalBottom } = goalMouth();
+
+        if (ball.x - ball.r <= FIELD.x) {
+          const inMouth = ball.y >= goalTop && ball.y <= goalBottom;
+          if (inMouth) {
+            goalScored("R");
+            return;
+          }
+          ball.x = minX;
+          ball.vx = Math.abs(ball.vx) * 0.72;
+        }
+
+        if (ball.x + ball.r >= FIELD.x + FIELD.w) {
+          const inMouth = ball.y >= goalTop && ball.y <= goalBottom;
+          if (inMouth) {
+            goalScored("L");
+            return;
+          }
+          ball.x = maxX;
+          ball.vx = -Math.abs(ball.vx) * 0.72;
+        }
+
+        if (ball.y - ball.r <= FIELD.y) {
+          ball.y = minY;
+          ball.vy *= -0.72;
+        } else if (ball.y + ball.r >= FIELD.y + FIELD.h) {
+          ball.y = maxY;
+          ball.vy *= -0.72;
+        }
+      }
+
+      function drawField() {
+        const grad = ctx.createRadialGradient(
+          canvas.width / 2,
+          canvas.height / 2,
+          80,
+          canvas.width / 2,
+          canvas.height / 2,
+          canvas.width * 0.75,
+        );
+        grad.addColorStop(0, "rgba(255,255,255,0.06)");
+        grad.addColorStop(1, "rgba(0,0,0,0.18)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = FIELD.line;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(FIELD.x, FIELD.y, FIELD.w, FIELD.h);
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, FIELD.y);
+        ctx.lineTo(canvas.width / 2, FIELD.y + FIELD.h);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 70, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const goalTop = canvas.height / 2 - GOAL.h / 2;
+
+        ctx.strokeStyle = "rgba(255,255,255,0.22)";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(FIELD.x - GOAL.w, goalTop, GOAL.w, GOAL.h);
+        ctx.strokeRect(FIELD.x + FIELD.w, goalTop, GOAL.w, GOAL.h);
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(255,255,255,0.12)";
+        for (let i = 0; i < 10; i++) {
+          const y = goalTop + (i / 10) * GOAL.h;
+
+          ctx.beginPath();
+          ctx.moveTo(FIELD.x - GOAL.w, y);
+          ctx.lineTo(FIELD.x, y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(FIELD.x + FIELD.w, y);
+          ctx.lineTo(FIELD.x + FIELD.w + GOAL.w, y);
+          ctx.stroke();
+        }
+      }
+
+      function drawPlayer(p, label) {
+        ctx.save();
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r - 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const sp = Math.hypot(p.vx, p.vy);
+        const nx = sp > 5 ? p.vx / sp : 0;
+        const ny = sp > 5 ? p.vy / sp : 0;
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.beginPath();
+        ctx.arc(
+          p.x + nx * (p.r - 5),
+          p.y + ny * (p.r - 5),
+          3.2,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        ctx.font = "600 12px ui-sans-serif, system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(label, p.x, p.y - (p.r + 10));
+      }
+
+      function drawKeeper(gk) {
+        const x = gk.x;
+        const y = gk.y - keeper.h / 2;
+
+        ctx.save();
+        ctx.shadowColor = gk.color;
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = gk.color;
+        ctx.fillRect(x, y, keeper.w, keeper.h);
+        ctx.restore();
+
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 0.5, y + 0.5, keeper.w - 1, keeper.h - 1);
+      }
+
+      function drawBall() {
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.beginPath();
+        ctx.ellipse(
+          ball.x,
+          ball.y + 9,
+          ball.r * 1.05,
+          ball.r * 0.65,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+
+        ctx.save();
+        ctx.shadowColor = "rgba(251,191,36,0.55)";
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r - 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      let last = performance.now();
+      function loop(now) {
+        const dt = Math.min(0.033, (now - last) / 1000);
+        last = now;
+        state.t += dt;
+
+        if (state.started && !state.over) {
+          if (state.mode === "online") {
+            if (net.isHost) {
+              if (state.pauseTimer > 0) {
+                state.pauseTimer -= dt;
+                if (state.pauseTimer <= 0) hideMessage();
+              } else {
+                applyPlayerInput(
+                  left,
+                  { up: "w", down: "s", left: "a", right: "d" },
+                  dt,
+                );
+                applyInputAxes(
+                  right,
+                  net.remoteInput.ax || 0,
+                  net.remoteInput.ay || 0,
+                  dt,
+                );
+
+                stepKeeper(gkL, "L", dt);
+                stepKeeper(gkR, "R", dt);
+
+                collideCircle(left, ball);
+                collideCircle(right, ball);
+
+                collideBallWithKeeper(gkL);
+                collideBallWithKeeper(gkR);
+
+                stepBall(dt);
+
+                collideBallWithKeeper(gkL);
+                collideBallWithKeeper(gkR);
+              }
+            } else {
+              sendRemoteInput(dt);
+            }
+          } else {
+            if (state.pauseTimer > 0) {
+              state.pauseTimer -= dt;
+              if (state.pauseTimer <= 0) hideMessage();
+            } else {
+              if (state.mode === "multi") {
+                applyPlayerInput(
+                  left,
+                  { up: "w", down: "s", left: "a", right: "d" },
+                  dt,
+                );
+                applyPlayerInput(
+                  right,
+                  {
+                    up: "arrowup",
+                    down: "arrowdown",
+                    left: "arrowleft",
+                    right: "arrowright",
+                  },
+                  dt,
+                );
+              } else {
+                applyAI(left, "L", dt);
+                applyPlayerInput(
+                  right,
+                  {
+                    up: "arrowup",
+                    down: "arrowdown",
+                    left: "arrowleft",
+                    right: "arrowright",
+                  },
+                  dt,
+                );
+              }
+
+              stepKeeper(gkL, "L", dt);
+              stepKeeper(gkR, "R", dt);
+
+              collideCircle(left, ball);
+              collideCircle(right, ball);
+
+              collideBallWithKeeper(gkL);
+              collideBallWithKeeper(gkR);
+
+              stepBall(dt);
+
+              collideBallWithKeeper(gkL);
+              collideBallWithKeeper(gkR);
+            }
+          }
+        }
+
+        if (state.mode === "online" && net.isHost && net.connected) {
+          net.lastStateSend += dt;
+          if (net.lastStateSend >= 1 / 30) {
+            sendMessage({ type: "state", payload: buildStatePayload() });
+            net.lastStateSend = 0;
+          }
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawField();
+        drawKeeper(gkL);
+        drawKeeper(gkR);
+
+        drawPlayer(left, state.mode === "single" ? "AI" : "WASD");
+        drawPlayer(right, "ARROWS");
+        drawBall();
+
+        requestAnimationFrame(loop);
+      }
+
+      hardReset();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>
